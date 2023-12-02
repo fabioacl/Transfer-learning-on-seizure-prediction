@@ -18,13 +18,7 @@ import datetime
 import pandas as pd
 import pickle
 import tensorflow as tf
-# import cv2
-# import imageio
 import copy
-
-# from tensorflow.keras import mixed_precision
-# policy = mixed_precision.Policy('mixed_float16')
-# mixed_precision.set_global_policy(policy)
 
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -727,12 +721,6 @@ window_seconds = 10
 # Get all patients numbers
 all_patient_numbers = get_all_patients_numbers(root_path)
 number_patients = len(all_patient_numbers)
-#dann_flag = True
-#if dann_flag:
-#    model_type = 'Transfer Learning Model DANN Model 0_1 Lambda'
-#else:
-#    model_type = 'Transfer Learning Model Standard'
-
 model_type = 'TL Model Conv Autoencoder'
 number_runs = 1
 number_patients = 24
@@ -773,7 +761,6 @@ for patient_index in range(14,15):
         continue
     
     training_seizures = round(training_ratio * num_seizures)
-    #training_seizures = 3
     
     test_data = dataset[training_seizures:num_seizures]
     test_labels = dataset_labels[training_seizures:num_seizures]
@@ -807,7 +794,6 @@ for patient_index in range(14,15):
         
         print("Train Seizure Prediction Model...")
         # Get standardisation values
-        #norm_values = np.load(f'G:/DATA FABIO/Scripts/Seizure Prediction/New Models/standardisation_values_cnn_lstm_dann_0_01.npy')
         norm_values = np.load(f'G:/DATA FABIO/Scripts/Seizure Prediction/New Models/standardisation_values_cnn_lstm_autoencoder_128_last_approach.npy')
         # Get mini-batch size
         batch_size = 32
@@ -824,38 +810,21 @@ for patient_index in range(14,15):
         dropout_rate = 0.2
         loss_weights = [1,0.1]
         
-        #model = get_model(nr_filters,filter_size,lstm_units,dropout_rate,lr,loss_weights,dann_flag)
-        
         model = get_autoencoder_model(nr_filters,filter_size,lstm_units,dropout_rate,lr)
         
         # Load transfer learning model weights
-        #if dann_flag:
-        #    model.load_weights(f'G:/DATA FABIO/Scripts/Seizure Prediction/New Models/seizure_prediction_model_cnn_lstm_dann_0_1_128.h5')
-        #else:
-        #    model.load_weights(f'G:/DATA FABIO/Scripts/Seizure Prediction/New Models/seizure_prediction_model_cnn_lstm_standard.h5')
         model.load_weights(f'G:/DATA FABIO/Scripts/Seizure Prediction/New Models/seizure_prediction_model_conv_autoencoder.h5')
-        
         model.trainable = False
         
         # When training a model obtained from a pretrained model containing batchnorm
         # one should use the following three lines of code. Otherwise the non-trainable
         # parameters of the batch norm layers will get updated and destroy the learning
         # model.trainable freezes the weights. training = False makes the layers working in inference mode.
-        #if dann_flag:
-        #    features_model = Model(model.input,model.layers[-7].output)
-        #else:
-        #    features_model = Model(model.input,model.layers[-4].output)
-       
         features_model = Model(model.input,model.layers[-13].output)
-        
         inputs = Input(shape=(2560,19))
         x = features_model(inputs,training=False)
-        # features_model.layers[-1].trainable = True
+      
         x = Bidirectional(LSTM(lstm_units,return_sequences=False))(x)
-        #fc_neurons = 64
-        #x = BatchNormalization()(x)
-        #x = Dropout(dropout_rate)(x)
-        #x = Dense(fc_neurons,swish_function)(x)
         x = Dropout(dropout_rate)(x)
         x = Dense(2)(x)
         x = Activation('softmax')(x)
@@ -902,7 +871,6 @@ for patient_index in range(14,15):
             X_test = (dataset[test_index]-norm_values[0])/norm_values[1]
             y_pred = np.zeros((X_test.shape[0],))
             if last_epoch>0:
-                #with tf.device('/cpu:0'):
                 for i in range(0,X_test.shape[0],1024):
                     y_pred_partial = model.predict(X_test[i:i+1024])
                     y_pred_partial = np.argmax(y_pred_partial,axis=1)
@@ -955,78 +923,3 @@ for patient_index in range(14,15):
         # Clear variables
         del X_train,X_val,training_batch_generator,validation_batch_generator
         gc.collect()
-
-
-#%% Plots
-# plt.close('all')
-
-# channelNames = ['Fp1','Fp2','F3','F4','C3','C4','P3','P4','O1','O2',
-#                     'F7','F8','T7','T8','P7','P8','Fz','Cz','Pz']
-# modelNumber = 0
-
-# # Segment index and channel
-# allPlotsEEG = True
-# eegChannelOffset = 100
-# lineWidthPlots = 1
-# titleFontSize = 14
-# labelsFontSize = 12
-
-# # Reduce dimension
-# X_test = dataset[test_index]
-# sample_index = 4
-# explained_class = 1
-# X_test_sample = np.squeeze(X_test[sample_index])
-
-# fs = 256
-
-# secondsPlot = 10
-# samplesPlot = secondsPlot*fs
-# t = timeSamples = np.arange(0,secondsPlot,1/fs)
-# numberSamples = X_test_sample.shape[0]
-# numberChannels = X_test_sample.shape[1]
-
-# figSize = (8,6)
-# fig = plt.figure(figsize=figSize,frameon=False)
-# ax = fig.add_subplot(111)
-# ax.plot(t,X_test_sample+eegChannelOffset*np.arange(18,-1,-1),color='black',linewidth=lineWidthPlots)
-# plt.title('Time Series - All EEG Channels',fontsize=titleFontSize)
-
-# plt.xlabel('Time (s)',fontsize=labelsFontSize)
-# plt.ylabel('EEG Channel',fontsize=labelsFontSize)
-# plt.yticks(eegChannelOffset*np.arange(18,-1,-1), channelNames)
-# plt.margins(0)
-# plt.ylim([-eegChannelOffset,eegChannelOffset*numberChannels])
-    
-# plt.show()
-
-# plt.savefig('my_img.png')
-
-# im = imageio.imread('my_img.png')
-
-# X_test_sample = np.expand_dims(dataset[test_index][sample_index],axis=0)
-
-# X_test_sample = (X_test_sample-norm_values[0])/norm_values[1]
-
-# h_before,h = getHeatmapGradCAM(model,'conv2d_2',X_test_sample.shape,X_test_sample,explained_class)
-
-# h2 = np.concatenate((np.zeros((72,620)),h,np.zeros((66,620))))
-
-# h2 = np.concatenate((np.zeros((600,100)),h2,np.zeros((600,80))),axis=1)
-
-# h2 = cv2.applyColorMap(np.uint8(255*h2), cv2.COLORMAP_JET)
-
-# h2 = h2[:,:,::-1]
-
-# plt.figure()
-
-# plt.imshow(im)
-# plt.imshow(h2,alpha=0.5,cmap='jet',interpolation='bilinear')
-
-# most_imp_chs = []
-
-# for index,X_test_sample in enumerate(X_test):
-#     X_test_sample = np.expand_dims(X_test_sample,axis=0)
-#     p,most_imp_ch = getChannelImportance(X_test_sample,y_pred[index],model)
-#     most_imp_chs.append(most_imp_ch)
-
-# print(f"Most Important Channel: {channelNames[most_imp_ch]}")
