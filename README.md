@@ -1,2 +1,2 @@
-# Transfer learning on seizure prediction: Does information from several patients improve patient-specific approaches?
+# Addressing data limitations in seizure prediction through transfer learning
 Scripts and convolutional autoencoder model used for applying transfer learning in seizure prediction
