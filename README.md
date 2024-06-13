@@ -20,3 +20,6 @@ Scripts and convolutional autoencoder model used for applying transfer learning 
 * Python 3.7
 * Tensorflow 2.6.0
 * Numpy 1.19.5
+
+## Scientific Paper
+- TBA
