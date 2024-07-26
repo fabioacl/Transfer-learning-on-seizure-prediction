@@ -22,4 +22,4 @@ Scripts and convolutional autoencoder model used for applying transfer learning 
 * Numpy 1.19.5
 
 ## Scientific Paper
-- TBA
+- Lopes, F., Pinto, M.F., Dourado, A. et al. Addressing data limitations in seizure prediction through transfer learning. Sci Rep 14, 14169 (2024). https://doi.org/10.1038/s41598-024-64802-1
